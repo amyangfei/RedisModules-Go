@@ -22,3 +22,6 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+go_hello_module.h
+redismodule.h
