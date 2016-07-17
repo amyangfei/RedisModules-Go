@@ -23,5 +23,6 @@ _testmain.go
 *.test
 *.prof
 
+go_password.h
 go_hello_module.h
 redismodule.h
