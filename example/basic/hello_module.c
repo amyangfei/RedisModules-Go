@@ -38,6 +38,17 @@ int Echo3Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   return RedisModule_ReplyWithString(ctx, rm_str);
 }
 
+/* ECHO4 <string> - Echo back a string sent from the client */
+int Echo4Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+  if (argc < 2) return RedisModule_WrongArity(ctx);
+  RedisModule_AutoMemory(ctx);
+  size_t len;
+  char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
+  struct GoEcho4_return r = GoEcho4(dst, len);
+  RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
+  return RedisModule_ReplyWithString(ctx, rm_str);
+}
+
 /* Registering the module */
 int RedisModule_OnLoad(RedisModuleCtx *ctx) {
   if (RedisModule_Init(ctx, "hello", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
@@ -50,6 +61,9 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx) {
     return REDISMODULE_ERR;
   }
   if (RedisModule_CreateCommand(ctx, "hello.echo3", Echo3Command, "readonly", 1,1,1) == REDISMODULE_ERR) {
+    return REDISMODULE_ERR;
+  }
+  if (RedisModule_CreateCommand(ctx, "hello.echo4", Echo4Command, "readonly", 1,1,1) == REDISMODULE_ERR) {
     return REDISMODULE_ERR;
   }
 }

@@ -34,4 +34,11 @@ func GoEcho3(s *C.char, length C.int) unsafe.Pointer {
 	return p
 }
 
+//export GoEcho4
+func GoEcho4(s *C.char, length C.int) (unsafe.Pointer, int) {
+	slice := C.GoBytes(unsafe.Pointer(s), length)
+	slice = append(slice, []byte(" from golang4")...)
+	return unsafe.Pointer(&(slice[0])), len(slice)
+}
+
 func main() {}
