@@ -3,7 +3,12 @@ package main
 // #include <stdlib.h>
 // #include "redismodule.h"
 import "C"
-import "unsafe"
+
+import (
+	"math/rand"
+	"time"
+	"unsafe"
+)
 
 //export GoEcho
 func GoEcho(s *C.char) *string {
@@ -39,6 +44,21 @@ func GoEcho4(s *C.char, length C.int) (unsafe.Pointer, int) {
 	slice := C.GoBytes(unsafe.Pointer(s), length)
 	slice = append(slice, []byte(" from golang4")...)
 	return unsafe.Pointer(&(slice[0])), len(slice)
+}
+
+//export GoEcho5
+func GoEcho5(s *C.char) (*string, *string) {
+	source := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(source)
+	var gostr, err string
+	if r.Intn(2) == 1 {
+		gostr = ""
+		err = "random system error"
+	} else {
+		gostr = (C.GoString(s) + " from golang5")
+		err = ""
+	}
+	return &gostr, &err
 }
 
 func main() {}
