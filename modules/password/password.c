@@ -26,13 +26,49 @@ static int cmd_password_set(RedisModuleCtx *ctx, RedisModuleString **argv, int a
     return REDISMODULE_OK;
 }
 
-
 static int cmd_password_hset(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     return REDISMODULE_OK;
 }
 
+static void validate(RedisModuleCtx *ctx, RedisModuleCallReply *stored_hash, RedisModuleString *password)
+{
+    char *stored_hash_str;
+    size_t hash_len;
+    char *pass;
+    size_t pass_len;
+
+    if (RedisModule_CallReplyType(stored_hash) == REDISMODULE_REPLY_NULL) {
+        RedisModule_ReplyWithLongLong(ctx, 0);
+        return;
+    }
+
+    if (RedisModule_CallReplyType(stored_hash) != REDISMODULE_REPLY_STRING) {
+        RedisModule_ReplyWithError(ctx, "WRONGTYPE Operation against a key holding the wrong kind of value");
+        return;
+    }
+
+    stored_hash_str = RedisModule_Strdup(RedisModule_CallReplyStringPtr(stored_hash, &hash_len));
+    pass = RedisModule_Strdup(RedisModule_StringPtrLen(password, &pass_len));
+
+    GoInt compare = GoDoValidate(stored_hash_str, pass, hash_len, pass_len);
+    if (compare == 1) {
+        RedisModule_ReplyWithLongLong(ctx, 1);
+    } else {
+        RedisModule_ReplyWithLongLong(ctx, 0);
+    }
+}
 
 static int cmd_password_check(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    RedisModuleCallReply *stored_hash;
+
+    if (argc != 3) {
+        RedisModule_WrongArity(ctx);
+        return REDISMODULE_OK;
+    }
+
+    stored_hash = RedisModule_Call(ctx, "GET", "s", argv[1]);
+    validate(ctx, stored_hash, argv[2]);
+
     return REDISMODULE_OK;
 }
 

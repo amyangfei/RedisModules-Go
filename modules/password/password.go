@@ -25,4 +25,17 @@ func GoDoCrypt(password *C.char, length C.int) (*string, *string) {
 	return &retHash, &retErr
 }
 
+//export GoDoValidate
+func GoDoValidate(hash, password *C.char, hashLen, passLen C.int) int {
+	hashSlice := C.GoBytes(unsafe.Pointer(hash), hashLen)
+	passSlice := C.GoBytes(unsafe.Pointer(password), passLen)
+
+	err := bcrypt.CompareHashAndPassword(hashSlice, passSlice)
+	if err != nil {
+		return 0
+	} else {
+		return 1
+	}
+}
+
 func main() {}
