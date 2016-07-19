@@ -26,9 +26,30 @@ static int cmd_password_set(RedisModuleCtx *ctx, RedisModuleString **argv, int a
     return REDISMODULE_OK;
 }
 
+
 static int cmd_password_hset(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    RedisModuleCallReply *reply;
+    char *password;
+    size_t len;
+
+    if (argc != 4) {
+        RedisModule_WrongArity(ctx);
+        return REDISMODULE_OK;
+    }
+
+    password = RedisModule_Strdup(RedisModule_StringPtrLen(argv[3], &len));
+    struct GoDoCrypt_return r = GoDoCrypt(password, len);
+
+    if ((*r.r1).n != 0) {
+        RedisModule_ReplyWithError(ctx, (*r.r1).p);
+        return REDISMODULE_ERR;
+    }
+    reply = RedisModule_Call(ctx, "HSET", "ssc!", argv[1], argv[2], (*r.r0).p);
+    RedisModule_ReplyWithCallReply(ctx, reply);
+
     return REDISMODULE_OK;
 }
+
 
 static void validate(RedisModuleCtx *ctx, RedisModuleCallReply *stored_hash, RedisModuleString *password)
 {
@@ -74,6 +95,16 @@ static int cmd_password_check(RedisModuleCtx *ctx, RedisModuleString **argv, int
 
 
 static int cmd_password_hcheck(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    RedisModuleCallReply *reply;
+
+    if (argc != 4) {
+        RedisModule_WrongArity(ctx);
+    return REDISMODULE_OK;
+    }
+
+    reply = RedisModule_Call(ctx, "HGET", "ss", argv[1], argv[2]);
+    validate(ctx, reply, argv[3]);
+
     return REDISMODULE_OK;
 }
 
