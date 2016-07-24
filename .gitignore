@@ -25,4 +25,5 @@ _testmain.go
 
 go_password.h
 go_hello_module.h
+go_rm_graphicsmagick.h
 redismodule.h
