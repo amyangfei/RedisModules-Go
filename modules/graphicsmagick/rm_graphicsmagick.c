@@ -139,11 +139,11 @@ int GMThumbnailCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     }
 
     struct GoImgThumbnail_return r = GoImgThumbnail(buf, key_len, width, height);
-    if ((*r.r1).n != 0) {
-        RedisModule_ReplyWithError(ctx, (*r.r1).p);
+    if ((*r.r2).n != 0) {
+        RedisModule_ReplyWithError(ctx, (*r.r2).p);
         return REDISMODULE_ERR;
     }
-    UpdateTransformedImage(ctx, key, (*r.r0).p, (*r.r0).n);
+    UpdateTransformedImage(ctx, key, r.r0, r.r1);
 
     return REDISMODULE_OK;
 }

@@ -4,8 +4,7 @@ package main
 import "C"
 
 import (
-	"bytes"
-	"github.com/rainycape/magick"
+	"gopkg.in/gographics/imagick.v2/imagick"
 	"unsafe"
 )
 
@@ -13,43 +12,47 @@ import (
 func GoGetImgType(buf *C.char, length C.int) (*string, *string) {
 	var imgType, retErr string
 	data := C.GoBytes(unsafe.Pointer(buf), length)
-	img, err := magick.DecodeData(data)
+
+	imagick.Initialize()
+	defer imagick.Terminate()
+	mw := imagick.NewMagickWand()
+
+	err := mw.ReadImageBlob(data)
 	if err != nil {
 		imgType, retErr = "", err.Error()
 	} else {
-		imgType, retErr = img.Format(), ""
+		imgType, retErr = mw.GetImageFormat(), ""
 	}
+
 	return &imgType, &retErr
 }
 
 //export GoImgThumbnail
-func GoImgThumbnail(buf *C.char, length C.int, width, height C.longlong) (*string, *string) {
-	var retImg, retErr string
+func GoImgThumbnail(buf *C.char, length C.int, width, height C.longlong) (unsafe.Pointer, int, *string) {
+	var retImg []byte
+	var retErr string
 
 	data := C.GoBytes(unsafe.Pointer(buf), length)
 
-	img, err := magick.DecodeData(data)
+	imagick.Initialize()
+	defer imagick.Terminate()
+	mw := imagick.NewMagickWand()
+
+	err := mw.ReadImageBlob(data)
 	if err != nil {
-		retImg, retErr = "", err.Error()
-		return &retImg, &retErr
+		retImg, retErr = []byte(""), err.Error()
+		return unsafe.Pointer(&(retImg[0])), 0, &retErr
 	}
 
-	thumbnail, err := img.Thumbnail(int(width), int(height))
+	err = mw.ThumbnailImage(uint(width), uint(height))
 	if err != nil {
-		retImg, retErr = "", err.Error()
-		return &retImg, &retErr
+		retImg, retErr = []byte(""), err.Error()
+		return unsafe.Pointer(&(retImg[0])), 0, &retErr
 	}
 
-	var wbuf bytes.Buffer
-	err = thumbnail.Encode(&wbuf, nil)
-	if err != nil {
-		retImg, retErr = "", err.Error()
-		return &retImg, &retErr
-	}
+	retImg, retErr = mw.GetImagesBlob(), ""
 
-	retImg, retErr = wbuf.String(), ""
-
-	return &retImg, &retErr
+	return unsafe.Pointer(&(retImg[0])), len(retImg), &retErr
 }
 
 func main() {}
