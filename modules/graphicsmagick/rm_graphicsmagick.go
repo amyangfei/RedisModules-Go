@@ -40,13 +40,13 @@ func GoImgThumbnail(buf *C.char, length C.int, width, height C.longlong) (unsafe
 
 	err := mw.ReadImageBlob(data)
 	if err != nil {
-		retImg, retErr = []byte(""), err.Error()
+		retImg, retErr = []byte("m"), err.Error()
 		return unsafe.Pointer(&(retImg[0])), 0, &retErr
 	}
 
 	err = mw.ThumbnailImage(uint(width), uint(height))
 	if err != nil {
-		retImg, retErr = []byte(""), err.Error()
+		retImg, retErr = []byte("m"), err.Error()
 		return unsafe.Pointer(&(retImg[0])), 0, &retErr
 	}
 
