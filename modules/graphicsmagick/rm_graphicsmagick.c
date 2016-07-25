@@ -40,6 +40,19 @@ int GMRotateCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     // init auto memory for created strings
     RedisModule_AutoMemory(ctx);
 
+    // open the key
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ|REDISMODULE_WRITE);
+    // If key doesn't exist then return immediately
+    if (RedisModule_KeyType(key) == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_ReplyWithError(ctx, "empty key");
+        return REDISMODULE_OK;
+    }
+    // Validate key is a string
+    if (RedisModule_KeyType(key) != REDISMODULE_KEYTYPE_STRING) {
+        RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+        return REDISMODULE_ERR;
+    }
+
     // Validate input is valid float
     double degrees;
     if (RedisModule_StringToDouble(argv[2], &degrees) == REDISMODULE_ERR) {
@@ -47,9 +60,21 @@ int GMRotateCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
         return REDISMODULE_ERR;
     }
 
-    // TODO: rotate image
+    // Get access to the image
+    size_t key_len;
+    char *buf = RedisModule_StringDMA(key, &key_len, REDISMODULE_READ);
+    if (!buf) {
+        RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+        return REDISMODULE_ERR;
+    }
 
-    return REDISMODULE_OK;
+    struct GoImgRotate_return r = GoImgRotate(buf, key_len, degrees);
+    if ((*r.r2).n != 0) {
+        RedisModule_ReplyWithError(ctx, (*r.r2).p);
+        return REDISMODULE_ERR;
+    }
+
+    return UpdateTransformedImage(ctx, key, r.r0, r.r1);
 }
 
 int GMSwirlCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -60,6 +85,19 @@ int GMSwirlCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     // init auto memory for created strings
     RedisModule_AutoMemory(ctx);
 
+    // open the key
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ|REDISMODULE_WRITE);
+    // If key doesn't exist then return immediately
+    if (RedisModule_KeyType(key) == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_ReplyWithError(ctx, "empty key");
+        return REDISMODULE_OK;
+    }
+    // Validate key is a string
+    if (RedisModule_KeyType(key) != REDISMODULE_KEYTYPE_STRING) {
+        RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+        return REDISMODULE_ERR;
+    }
+
     // Validate input is valid float
     double degrees;
     if (RedisModule_StringToDouble(argv[2], &degrees) == REDISMODULE_ERR) {
@@ -67,9 +105,21 @@ int GMSwirlCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
         return REDISMODULE_ERR;
     }
 
-    // TODO: swirl image
+    // Get access to the image
+    size_t key_len;
+    char *buf = RedisModule_StringDMA(key, &key_len, REDISMODULE_READ);
+    if (!buf) {
+        RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+        return REDISMODULE_ERR;
+    }
 
-    return REDISMODULE_OK;
+    struct GoImgSwirl_return r = GoImgSwirl(buf, key_len, degrees);
+    if ((*r.r2).n != 0) {
+        RedisModule_ReplyWithError(ctx, (*r.r2).p);
+        return REDISMODULE_ERR;
+    }
+
+    return UpdateTransformedImage(ctx, key, r.r0, r.r1);
 }
 
 int GMBlurCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -79,6 +129,19 @@ int GMBlurCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
     // init auto memory for created strings
     RedisModule_AutoMemory(ctx);
+
+    // open the key
+    RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ|REDISMODULE_WRITE);
+    // If key doesn't exist then return immediately
+    if (RedisModule_KeyType(key) == REDISMODULE_KEYTYPE_EMPTY) {
+        RedisModule_ReplyWithError(ctx, "empty key");
+        return REDISMODULE_OK;
+    }
+    // Validate key is a string
+    if (RedisModule_KeyType(key) != REDISMODULE_KEYTYPE_STRING) {
+        RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+        return REDISMODULE_ERR;
+    }
 
     // Validate inputs are valid floats
     double radius;
@@ -92,9 +155,21 @@ int GMBlurCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
         return REDISMODULE_ERR;
     }
 
-    // TODO: blur image
+    // Get access to the image
+    size_t key_len;
+    char *buf = RedisModule_StringDMA(key, &key_len, REDISMODULE_READ);
+    if (!buf) {
+        RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+        return REDISMODULE_ERR;
+    }
 
-    return REDISMODULE_OK;
+    struct GoImgBlur_return r = GoImgBlur(buf, key_len, radius, sigma);
+    if ((*r.r2).n != 0) {
+        RedisModule_ReplyWithError(ctx, (*r.r2).p);
+        return REDISMODULE_ERR;
+    }
+
+    return UpdateTransformedImage(ctx, key, r.r0, r.r1);
 }
 
 int GMThumbnailCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -143,9 +218,8 @@ int GMThumbnailCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         RedisModule_ReplyWithError(ctx, (*r.r2).p);
         return REDISMODULE_ERR;
     }
-    UpdateTransformedImage(ctx, key, r.r0, r.r1);
 
-    return REDISMODULE_OK;
+    return UpdateTransformedImage(ctx, key, r.r0, r.r1);
 }
 
 int GMGetTypeCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
