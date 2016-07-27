@@ -8,8 +8,8 @@ int EchoCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   RedisModule_AutoMemory(ctx);
   size_t len;
   char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
-  GoString *r = GoEcho(dst);
-  RedisModuleString *rm_str = RedisModule_CreateString(ctx, (*r).p, (*r).n);
+  struct GoEcho_return r = GoEcho(dst);
+  RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
   return RedisModule_ReplyWithString(ctx, rm_str);
 }
 

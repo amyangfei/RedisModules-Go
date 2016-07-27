@@ -38,9 +38,9 @@ func ZeroCopySlice(p unsafe.Pointer, n int) *Slice {
 //export GoEcho
 // c->go: Convert C string to Go string
 // go->c: return Go string pointer
-func GoEcho(s *C.char) *string {
+func GoEcho(s *C.char) (*C.char, int) {
 	gostr := (C.GoString(s) + " from golang1")
-	return &gostr
+	return C.CString(gostr), len(gostr)
 }
 
 //export GoEcho2
