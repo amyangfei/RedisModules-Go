@@ -6,9 +6,34 @@ import "C"
 
 import (
 	"math/rand"
+	"reflect"
+	"runtime"
 	"time"
 	"unsafe"
 )
+
+type c_slice_t struct {
+	p unsafe.Pointer
+	n int
+}
+
+type Slice struct {
+	Data []byte
+	data *c_slice_t
+}
+
+func ZeroCopySlice(p unsafe.Pointer, n int) *Slice {
+	data := &c_slice_t{p, n}
+	runtime.SetFinalizer(data, func(data *c_slice_t) {
+		C.free(data.p)
+	})
+	s := &Slice{data: data}
+	h := (*reflect.SliceHeader)((unsafe.Pointer(&s.Data)))
+	h.Cap = n
+	h.Len = n
+	h.Data = uintptr(p)
+	return s
+}
 
 //export GoEcho
 func GoEcho(s *C.char) *string {
@@ -59,6 +84,14 @@ func GoEcho5(s *C.char) (*string, *string) {
 		err = ""
 	}
 	return &gostr, &err
+}
+
+//export GoEcho6
+func GoEcho6(s *C.char, length C.int) (unsafe.Pointer, int) {
+	zslice := ZeroCopySlice(unsafe.Pointer(s), int(length))
+	// slice := C.GoBytes(unsafe.Pointer(s), length)
+	slice := append(zslice.Data, []byte(" from golang6")...)
+	return unsafe.Pointer(&(slice[0])), len(slice)
 }
 
 func main() {}
