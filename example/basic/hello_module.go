@@ -22,15 +22,15 @@ type Slice struct {
 	data *c_slice_t
 }
 
-func ZeroCopySlice(p unsafe.Pointer, n int) *Slice {
-	data := &c_slice_t{p, n}
+func ZeroCopySlice(p unsafe.Pointer, length, capacity int) *Slice {
+	data := &c_slice_t{p, length}
 	runtime.SetFinalizer(data, func(data *c_slice_t) {
 		C.free(data.p)
 	})
 	s := &Slice{data: data}
 	h := (*reflect.SliceHeader)((unsafe.Pointer(&s.Data)))
-	h.Cap = n
-	h.Len = n
+	h.Cap = capacity
+	h.Len = length
 	h.Data = uintptr(p)
 	return s
 }
@@ -72,12 +72,14 @@ func GoEcho3(s *C.char, length C.int) (unsafe.Pointer, int) {
 }
 
 //export GoEcho4
-// c->go: Convert C array with explicit length to Go []byte using C.GoBytes
-// go->c: return unsafe.Pointer and length
+// c->go: using reflect to bind C memory to Go resource without memory copy.
+// Fullfill c memory directly
 func GoEcho4(s *C.char, length C.int) (unsafe.Pointer, int) {
-	slice := C.GoBytes(unsafe.Pointer(s), length)
-	slice = append(slice, " from golang4"...)
-	return unsafe.Pointer(&(slice[0])), len(slice)
+	incr := " from golang4"
+	cap := int(length) + len(incr)
+	zslice := ZeroCopySlice(unsafe.Pointer(s), int(length), cap)
+	copy(zslice.Data[int(length):cap], incr)
+	return unsafe.Pointer(&zslice.Data[0]), cap
 }
 
 //export GoEcho5
@@ -96,11 +98,12 @@ func GoEcho5(s *C.char) (*C.char, int, *C.char, int) {
 
 //export GoEcho6
 // c->go: using reflect to bind C memory to Go resource without memory copy.
-// go->c: return unsafe.Pointer and length
-func GoEcho6(s *C.char, length C.int) (unsafe.Pointer, int) {
-	zslice := ZeroCopySlice(unsafe.Pointer(s), int(length))
-	slice := append(zslice.Data, " from golang6"...)
-	return unsafe.Pointer(&(slice[0])), len(slice)
+// Fullfill c memory directly
+func GoEcho6(s *C.char, length, capacity C.int) (unsafe.Pointer, int) {
+	incr := " from golang6"
+	zslice := ZeroCopySlice(unsafe.Pointer(s), int(capacity), int(capacity))
+	copy(zslice.Data[int(length):], incr)
+	return unsafe.Pointer(&zslice.Data[0]), int(length) + len(incr)
 }
 
 func main() {}

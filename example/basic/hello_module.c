@@ -52,6 +52,7 @@ int Echo4Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     RedisModule_AutoMemory(ctx);
     size_t len;
     char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
+    /* RedisModule_Realloc(dst, capacity); */
     struct GoEcho4_return r = GoEcho4(dst, len);
     RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
     RedisModule_ReplyWithString(ctx, rm_str);
@@ -85,9 +86,12 @@ int Echo6Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     RedisModule_AutoMemory(ctx);
     size_t len;
     char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
-    struct GoEcho6_return r = GoEcho6(dst, len);
+    size_t capacity = len + 20;
+    RedisModule_Realloc(dst, capacity);
+    struct GoEcho6_return r = GoEcho6(dst, len, capacity);
     RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
-    return RedisModule_ReplyWithString(ctx, rm_str);
+    RedisModule_ReplyWithString(ctx, rm_str);
+    return REDISMODULE_OK;
 }
 
 /* Registering the module */
