@@ -2,14 +2,14 @@
 #include "redismodule.h"
 #include <string.h>
 
-/* ECHO <string> - Echo back a string sent from the client */
-int EchoCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+/* ECHO1 <string> - Echo back a string sent from the client */
+int Echo1Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (argc < 2) return RedisModule_WrongArity(ctx);
     RedisModule_AutoMemory(ctx);
     size_t len;
     char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
 
-    struct GoEcho_return r = GoEcho(dst);
+    struct GoEcho1_return r = GoEcho1(dst);
     RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
     free(r.r0);
 
@@ -94,12 +94,25 @@ int Echo6Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     return REDISMODULE_OK;
 }
 
+/* ECHO7 <string> - Echo back a string sent from the client */
+int Echo7Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    if (argc < 2) return RedisModule_WrongArity(ctx);
+    RedisModule_AutoMemory(ctx);
+    size_t len;
+    char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
+    struct GoEcho7_return r = GoEcho7(dst, len);
+    RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
+    free(r.r0);
+    RedisModule_ReplyWithString(ctx, rm_str);
+    return REDISMODULE_OK;
+}
+
 /* Registering the module */
 int RedisModule_OnLoad(RedisModuleCtx *ctx) {
     if (RedisModule_Init(ctx, "hello", 1, REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
     }
-    if (RedisModule_CreateCommand(ctx, "hello.echo", EchoCommand, "readonly", 1,1,1) == REDISMODULE_ERR) {
+    if (RedisModule_CreateCommand(ctx, "hello.echo1", Echo1Command, "readonly", 1,1,1) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
     }
     if (RedisModule_CreateCommand(ctx, "hello.echo2", Echo2Command, "readonly", 1,1,1) == REDISMODULE_ERR) {
@@ -115,6 +128,9 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx) {
         return REDISMODULE_ERR;
     }
     if (RedisModule_CreateCommand(ctx, "hello.echo6", Echo6Command, "readonly", 1,1,1) == REDISMODULE_ERR) {
+        return REDISMODULE_ERR;
+    }
+    if (RedisModule_CreateCommand(ctx, "hello.echo7", Echo7Command, "readonly", 1,1,1) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
     }
 }

@@ -22,11 +22,13 @@ type Slice struct {
 	data *c_slice_t
 }
 
-func ZeroCopySlice(p unsafe.Pointer, length, capacity int) *Slice {
+func ZeroCopySlice(p unsafe.Pointer, length, capacity int, autofree bool) *Slice {
 	data := &c_slice_t{p, length}
-	runtime.SetFinalizer(data, func(data *c_slice_t) {
-		C.free(data.p)
-	})
+	if autofree {
+		runtime.SetFinalizer(data, func(data *c_slice_t) {
+			C.free(data.p)
+		})
+	}
 	s := &Slice{data: data}
 	h := (*reflect.SliceHeader)((unsafe.Pointer(&s.Data)))
 	h.Cap = capacity
@@ -35,10 +37,10 @@ func ZeroCopySlice(p unsafe.Pointer, length, capacity int) *Slice {
 	return s
 }
 
-//export GoEcho
+//export GoEcho1
 // c->go: Convert C string to Go string
 // go->c: Create C string via C.CString, return pointer and length of string
-func GoEcho(s *C.char) (*C.char, int) {
+func GoEcho1(s *C.char) (*C.char, int) {
 	gostr := (C.GoString(s) + " from golang1")
 	return C.CString(gostr), len(gostr)
 }
@@ -77,7 +79,7 @@ func GoEcho3(s *C.char, length C.int) (unsafe.Pointer, int) {
 func GoEcho4(s *C.char, length C.int) (unsafe.Pointer, int) {
 	incr := " from golang4"
 	cap := int(length) + len(incr)
-	zslice := ZeroCopySlice(unsafe.Pointer(s), int(length), cap)
+	zslice := ZeroCopySlice(unsafe.Pointer(s), int(length), cap, false)
 	copy(zslice.Data[int(length):cap], incr)
 	return unsafe.Pointer(&zslice.Data[0]), cap
 }
@@ -101,9 +103,27 @@ func GoEcho5(s *C.char) (*C.char, int, *C.char, int) {
 // Fullfill c memory directly
 func GoEcho6(s *C.char, length, capacity C.int) (unsafe.Pointer, int) {
 	incr := " from golang6"
-	zslice := ZeroCopySlice(unsafe.Pointer(s), int(capacity), int(capacity))
+	zslice := ZeroCopySlice(unsafe.Pointer(s), int(capacity), int(capacity), false)
 	copy(zslice.Data[int(length):], incr)
 	return unsafe.Pointer(&zslice.Data[0]), int(length) + len(incr)
+}
+
+//export GoEcho7
+// c->go: using reflect to bind C memory to Go resource without memory copy.
+// go->c: malloc the C buffer, and make a single copy into that buffer.
+func GoEcho7(s *C.char, length C.int) (unsafe.Pointer, int) {
+	incr := " from golang7"
+	// cap := int(length) + len(incr)
+	zslice := ZeroCopySlice(unsafe.Pointer(s), int(length), int(length), false)
+	zslice.Data = append(zslice.Data, incr...)
+
+	p := C.malloc(C.size_t(len(zslice.Data)))
+	// free memory in c code
+	// defer C.free(p)
+	cBuf := (*[1 << 30]byte)(p)
+	copy(cBuf[:], zslice.Data)
+
+	return p, len(zslice.Data)
 }
 
 func main() {}
