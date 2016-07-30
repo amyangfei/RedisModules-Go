@@ -1,6 +1,7 @@
 #include "go_password.h"
 #include "redismodule.h"
 #include <string.h>
+#include <stdlib.h>
 
 
 static int cmd_password_set(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -16,12 +17,16 @@ static int cmd_password_set(RedisModuleCtx *ctx, RedisModuleString **argv, int a
     char *password = RedisModule_Strdup(RedisModule_StringPtrLen(argv[2], &len));
     struct GoDoCrypt_return r = GoDoCrypt(password, len);
 
-    if ((*r.r1).n != 0) {
-        RedisModule_ReplyWithError(ctx, (*r.r1).p);
+    if (r.r3 != 0) {
+        RedisModule_ReplyWithError(ctx, r.r2);
+        free(r.r0);
+        free(r.r2);
         return REDISMODULE_ERR;
     }
-    reply = RedisModule_Call(ctx, "SET", "sc!", argv[1], (*r.r0).p);
+    reply = RedisModule_Call(ctx, "SET", "sc!", argv[1], r.r0);
     RedisModule_ReplyWithCallReply(ctx, reply);
+    free(r.r0);
+    free(r.r2);
 
     return REDISMODULE_OK;
 }
@@ -40,12 +45,14 @@ static int cmd_password_hset(RedisModuleCtx *ctx, RedisModuleString **argv, int 
     password = RedisModule_Strdup(RedisModule_StringPtrLen(argv[3], &len));
     struct GoDoCrypt_return r = GoDoCrypt(password, len);
 
-    if ((*r.r1).n != 0) {
-        RedisModule_ReplyWithError(ctx, (*r.r1).p);
+    if (r.r3 != 0) {
+        RedisModule_ReplyWithError(ctx, r.r2);
         return REDISMODULE_ERR;
     }
-    reply = RedisModule_Call(ctx, "HSET", "ssc!", argv[1], argv[2], (*r.r0).p);
+    reply = RedisModule_Call(ctx, "HSET", "ssc!", argv[1], argv[2], r.r0);
     RedisModule_ReplyWithCallReply(ctx, reply);
+    free(r.r0);
+    free(r.r2);
 
     return REDISMODULE_OK;
 }

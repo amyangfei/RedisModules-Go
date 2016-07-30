@@ -4,25 +4,24 @@ package main
 import "C"
 
 import (
+	"github.com/amyangfei/RedisModules-Go/cgoutils"
 	"golang.org/x/crypto/bcrypt"
 	"unsafe"
 )
 
 //export GoDoCrypt
-func GoDoCrypt(password *C.char, length C.int) (*string, *string) {
-	var retHash, retErr string
-
-	passwdSlice := C.GoBytes(unsafe.Pointer(password), length)
+func GoDoCrypt(password *C.char, length C.int) (*C.char, int, *C.char, int) {
+	passwdSlice := cgoutils.ZeroCopySlice(
+		unsafe.Pointer(password), int(length), int(length), false)
 
 	// Hashing the password with cost of 5
-	hashed, err := bcrypt.GenerateFromPassword(passwdSlice, 5)
+	hashed, err := bcrypt.GenerateFromPassword(passwdSlice.Data, 5)
 	if err != nil {
-		retHash, retErr = "", err.Error()
+		errstr := err.Error()
+		return C.CString(""), 0, C.CString(errstr), len(errstr)
 	} else {
-		retHash, retErr = string(hashed), ""
+		return C.CString(string(hashed)), len(hashed), C.CString(""), 0
 	}
-
-	return &retHash, &retErr
 }
 
 //export GoDoValidate
