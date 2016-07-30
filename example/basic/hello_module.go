@@ -5,37 +5,11 @@ package main
 import "C"
 
 import (
+	"github.com/amyangfei/RedisModules-Go/cgoutils"
 	"math/rand"
-	"reflect"
-	"runtime"
 	"time"
 	"unsafe"
 )
-
-type c_slice_t struct {
-	p unsafe.Pointer
-	n int
-}
-
-type Slice struct {
-	Data []byte
-	data *c_slice_t
-}
-
-func ZeroCopySlice(p unsafe.Pointer, length, capacity int, autofree bool) *Slice {
-	data := &c_slice_t{p, length}
-	if autofree {
-		runtime.SetFinalizer(data, func(data *c_slice_t) {
-			C.free(data.p)
-		})
-	}
-	s := &Slice{data: data}
-	h := (*reflect.SliceHeader)((unsafe.Pointer(&s.Data)))
-	h.Cap = capacity
-	h.Len = length
-	h.Data = uintptr(p)
-	return s
-}
 
 //export GoEcho1
 // c->go: Convert C string to Go string
@@ -79,7 +53,7 @@ func GoEcho3(s *C.char, length C.int) (unsafe.Pointer, int) {
 func GoEcho4(s *C.char, length C.int) (unsafe.Pointer, int) {
 	incr := " from golang4"
 	cap := int(length) + len(incr)
-	zslice := ZeroCopySlice(unsafe.Pointer(s), int(length), cap, false)
+	zslice := cgoutils.ZeroCopySlice(unsafe.Pointer(s), int(length), cap, false)
 	copy(zslice.Data[int(length):cap], incr)
 	return unsafe.Pointer(&zslice.Data[0]), cap
 }
@@ -103,7 +77,7 @@ func GoEcho5(s *C.char) (*C.char, int, *C.char, int) {
 // Fullfill c memory directly
 func GoEcho6(s *C.char, length, capacity C.int) (unsafe.Pointer, int) {
 	incr := " from golang6"
-	zslice := ZeroCopySlice(unsafe.Pointer(s), int(capacity), int(capacity), false)
+	zslice := cgoutils.ZeroCopySlice(unsafe.Pointer(s), int(capacity), int(capacity), false)
 	copy(zslice.Data[int(length):], incr)
 	return unsafe.Pointer(&zslice.Data[0]), int(length) + len(incr)
 }
@@ -114,7 +88,7 @@ func GoEcho6(s *C.char, length, capacity C.int) (unsafe.Pointer, int) {
 func GoEcho7(s *C.char, length C.int) (unsafe.Pointer, int) {
 	incr := " from golang7"
 	// cap := int(length) + len(incr)
-	zslice := ZeroCopySlice(unsafe.Pointer(s), int(length), int(length), false)
+	zslice := cgoutils.ZeroCopySlice(unsafe.Pointer(s), int(length), int(length), false)
 	zslice.Data = append(zslice.Data, incr...)
 
 	p := C.malloc(C.size_t(len(zslice.Data)))
