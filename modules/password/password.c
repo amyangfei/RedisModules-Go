@@ -27,6 +27,7 @@ static int cmd_password_set(RedisModuleCtx *ctx, RedisModuleString **argv, int a
     RedisModule_ReplyWithCallReply(ctx, reply);
     free(r.r0);
     free(r.r2);
+    RedisModule_Free(password);
 
     return REDISMODULE_OK;
 }
@@ -53,6 +54,7 @@ static int cmd_password_hset(RedisModuleCtx *ctx, RedisModuleString **argv, int 
     RedisModule_ReplyWithCallReply(ctx, reply);
     free(r.r0);
     free(r.r2);
+    RedisModule_Free(password);
 
     return REDISMODULE_OK;
 }
@@ -84,6 +86,8 @@ static void validate(RedisModuleCtx *ctx, RedisModuleCallReply *stored_hash, Red
     } else {
         RedisModule_ReplyWithLongLong(ctx, 0);
     }
+    RedisModule_Free(stored_hash_str);
+    RedisModule_Free(pass);
 }
 
 static int cmd_password_check(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {

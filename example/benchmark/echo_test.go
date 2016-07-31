@@ -2,6 +2,7 @@ package benchmark
 
 import (
 	"github.com/garyburd/redigo/redis"
+	"math/rand"
 	"testing"
 	"time"
 )
@@ -33,15 +34,24 @@ func newPool(server, password string) *redis.Pool {
 var (
 	Pool        *redis.Pool
 	RedisServer string = "127.0.0.1:6379"
+	EchoMsg     []byte
 )
 
 func init() {
 	Pool = newPool(RedisServer, "")
+
+	letters := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	// 42KB string
+	strlen := 42 * 1024
+	EchoMsg = make([]byte, strlen)
+	for i := 0; i < strlen; i++ {
+		EchoMsg[i] = letters[rand.Intn(len(letters))]
+	}
 }
 
 func RedisEcho(pool *redis.Pool, cmd string) {
 	conn := pool.Get()
-	if _, err := conn.Do(cmd, "0x2a"); err != nil {
+	if _, err := conn.Do(cmd, EchoMsg); err != nil {
 		panic(err)
 	}
 }

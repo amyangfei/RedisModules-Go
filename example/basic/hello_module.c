@@ -5,13 +5,15 @@
 /* ECHO1 <string> - Echo back a string sent from the client */
 int Echo1Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (argc < 2) return RedisModule_WrongArity(ctx);
+
     RedisModule_AutoMemory(ctx);
+
     size_t len;
     char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
-
     struct GoEcho1_return r = GoEcho1(dst);
     RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
     free(r.r0);
+    RedisModule_Free(dst);
 
     RedisModule_ReplyWithString(ctx, rm_str);
     return REDISMODULE_OK;
@@ -20,13 +22,15 @@ int Echo1Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 /* ECHO2 <string> - Echo back a string sent from the client */
 int Echo2Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (argc < 2) return RedisModule_WrongArity(ctx);
+
     RedisModule_AutoMemory(ctx);
+
     size_t len;
     char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
-
     struct GoEcho2_return r = GoEcho2(dst, len);
     RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
     free(r.r0);
+    RedisModule_Free(dst);
 
     RedisModule_ReplyWithString(ctx, rm_str);
     return REDISMODULE_OK;
@@ -35,13 +39,17 @@ int Echo2Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 /* ECHO3 <string> - Echo back a string sent from the client */
 int Echo3Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (argc < 2) return RedisModule_WrongArity(ctx);
+
     RedisModule_AutoMemory(ctx);
+
     size_t len;
     char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
     struct GoEcho3_return r = GoEcho3(dst, len);
     RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
     // free memory allocated in Golang stack
     free(r.r0);
+    RedisModule_Free(dst);
+
     RedisModule_ReplyWithString(ctx, rm_str);
     return REDISMODULE_OK;
 }
@@ -49,12 +57,16 @@ int Echo3Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 /* ECHO4 <string> - Echo back a string sent from the client */
 int Echo4Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (argc < 2) return RedisModule_WrongArity(ctx);
+
     RedisModule_AutoMemory(ctx);
+
     size_t len;
     char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
     /* RedisModule_Realloc(dst, capacity); */
     struct GoEcho4_return r = GoEcho4(dst, len);
     RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
+    RedisModule_Free(dst);
+
     RedisModule_ReplyWithString(ctx, rm_str);
     return REDISMODULE_OK;
 }
@@ -62,7 +74,9 @@ int Echo4Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 /* ECHO5 <string> - Echo back a string sent from the client */
 int Echo5Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (argc < 2) return RedisModule_WrongArity(ctx);
+
     RedisModule_AutoMemory(ctx);
+
     size_t len;
     char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
     struct GoEcho5_return r = GoEcho5(dst);
@@ -70,12 +84,14 @@ int Echo5Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
         RedisModule_ReplyWithError(ctx, r.r2);
         free(r.r0);
         free(r.r2);
+        RedisModule_Free(dst);
         return REDISMODULE_ERR;
     } else {
         RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
         RedisModule_ReplyWithString(ctx, rm_str);
         free(r.r0);
         free(r.r2);
+        RedisModule_Free(dst);
         return REDISMODULE_OK;
     }
 }
@@ -83,7 +99,9 @@ int Echo5Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 /* ECHO6 <string> - Echo back a string sent from the client */
 int Echo6Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (argc < 2) return RedisModule_WrongArity(ctx);
+
     RedisModule_AutoMemory(ctx);
+
     size_t len;
     char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
     size_t capacity = len + 20;
@@ -91,19 +109,25 @@ int Echo6Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     struct GoEcho6_return r = GoEcho6(dst, len, capacity);
     RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
     RedisModule_ReplyWithString(ctx, rm_str);
+    RedisModule_Free(dst);
+
     return REDISMODULE_OK;
 }
 
 /* ECHO7 <string> - Echo back a string sent from the client */
 int Echo7Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (argc < 2) return RedisModule_WrongArity(ctx);
+
     RedisModule_AutoMemory(ctx);
+
     size_t len;
     char *dst = RedisModule_Strdup(RedisModule_StringPtrLen(argv[1], &len));
     struct GoEcho7_return r = GoEcho7(dst, len);
     RedisModuleString *rm_str = RedisModule_CreateString(ctx, r.r0, r.r1);
     free(r.r0);
     RedisModule_ReplyWithString(ctx, rm_str);
+    RedisModule_Free(dst);
+
     return REDISMODULE_OK;
 }
 
