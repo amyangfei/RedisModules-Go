@@ -4,140 +4,126 @@ package main
 import "C"
 
 import (
+	"github.com/amyangfei/RedisModules-Go/cgoutils"
 	"gopkg.in/gographics/imagick.v2/imagick"
 	"unsafe"
 )
 
+func formatResult(result interface{}, err error) (*C.char, int, *C.char, int) {
+	if err != nil {
+		errstr := err.Error()
+		return C.CString(""), 0, C.CString(errstr), len(errstr)
+	}
+	switch v := result.(type) {
+	default:
+		errstr := "unexpected result type"
+		return C.CString(""), 0, C.CString(errstr), len(errstr)
+	case []byte:
+		return C.CString(string(v)), len(v), C.CString(""), 0
+	case string:
+		return C.CString(v), len(v), C.CString(""), 0
+	}
+}
+
 //export GoGetImgType
-func GoGetImgType(buf *C.char, length C.int) (*string, *string) {
-	var imgType, retErr string
-	data := C.GoBytes(unsafe.Pointer(buf), length)
+func GoGetImgType(buf *C.char, length C.int) (*C.char, int, *C.char, int) {
+	raw := cgoutils.ZeroCopySlice(unsafe.Pointer(buf), int(length), int(length), false)
 
 	imagick.Initialize()
 	defer imagick.Terminate()
 	mw := imagick.NewMagickWand()
 
-	err := mw.ReadImageBlob(data)
+	err := mw.ReadImageBlob(raw.Data)
 	if err != nil {
-		imgType, retErr = "", err.Error()
+		return formatResult(nil, err)
 	} else {
-		imgType, retErr = mw.GetImageFormat(), ""
+		return formatResult(mw.GetImageFormat(), nil)
 	}
-
-	return &imgType, &retErr
 }
 
 //export GoImgThumbnail
-func GoImgThumbnail(buf *C.char, length C.int, width, height C.longlong) (unsafe.Pointer, int, *string) {
-	var retImg []byte
-	var retErr string
-
-	data := C.GoBytes(unsafe.Pointer(buf), length)
+func GoImgThumbnail(buf *C.char, length C.int, width, height C.longlong) (*C.char, int, *C.char, int) {
+	raw := cgoutils.ZeroCopySlice(unsafe.Pointer(buf), int(length), int(length), false)
 
 	imagick.Initialize()
 	defer imagick.Terminate()
 	mw := imagick.NewMagickWand()
 
-	err := mw.ReadImageBlob(data)
+	err := mw.ReadImageBlob(raw.Data)
 	if err != nil {
-		retImg, retErr = []byte("m"), err.Error()
-		return unsafe.Pointer(&(retImg[0])), 0, &retErr
+		return formatResult(nil, err)
 	}
 
 	err = mw.ThumbnailImage(uint(width), uint(height))
 	if err != nil {
-		retImg, retErr = []byte("m"), err.Error()
-		return unsafe.Pointer(&(retImg[0])), 0, &retErr
+		return formatResult(nil, err)
 	}
 
-	retImg, retErr = mw.GetImagesBlob(), ""
-
-	return unsafe.Pointer(&(retImg[0])), len(retImg), &retErr
+	return formatResult(mw.GetImageBlob(), nil)
 }
 
 //export GoImgRotate
-func GoImgRotate(buf *C.char, length C.int, degrees C.double) (unsafe.Pointer, int, *string) {
-	var retImg []byte
-	var retErr string
-
-	data := C.GoBytes(unsafe.Pointer(buf), length)
+func GoImgRotate(buf *C.char, length C.int, degrees C.double) (*C.char, int, *C.char, int) {
+	raw := cgoutils.ZeroCopySlice(unsafe.Pointer(buf), int(length), int(length), false)
 
 	imagick.Initialize()
 	defer imagick.Terminate()
 	mw := imagick.NewMagickWand()
 
-	err := mw.ReadImageBlob(data)
+	err := mw.ReadImageBlob(raw.Data)
 	if err != nil {
-		retImg, retErr = []byte("m"), err.Error()
-		return unsafe.Pointer(&(retImg[0])), 0, &retErr
+		return formatResult(nil, err)
 	}
 
 	background := imagick.NewPixelWand()
 	err = mw.RotateImage(background, float64(degrees))
 	if err != nil {
-		retImg, retErr = []byte("m"), err.Error()
-		return unsafe.Pointer(&(retImg[0])), 0, &retErr
+		return formatResult(nil, err)
 	}
 
-	retImg, retErr = mw.GetImagesBlob(), ""
-
-	return unsafe.Pointer(&(retImg[0])), len(retImg), &retErr
+	return formatResult(mw.GetImageBlob(), nil)
 }
 
 //export GoImgBlur
-func GoImgBlur(buf *C.char, length C.int, radius, sigma C.double) (unsafe.Pointer, int, *string) {
-	var retImg []byte
-	var retErr string
-
-	data := C.GoBytes(unsafe.Pointer(buf), length)
+func GoImgBlur(buf *C.char, length C.int, radius, sigma C.double) (*C.char, int, *C.char, int) {
+	raw := cgoutils.ZeroCopySlice(unsafe.Pointer(buf), int(length), int(length), false)
 
 	imagick.Initialize()
 	defer imagick.Terminate()
 	mw := imagick.NewMagickWand()
 
-	err := mw.ReadImageBlob(data)
+	err := mw.ReadImageBlob(raw.Data)
 	if err != nil {
-		retImg, retErr = []byte("m"), err.Error()
-		return unsafe.Pointer(&(retImg[0])), 0, &retErr
+		return formatResult(nil, err)
 	}
 
 	err = mw.BlurImage(float64(radius), float64(sigma))
 	if err != nil {
-		retImg, retErr = []byte("m"), err.Error()
-		return unsafe.Pointer(&(retImg[0])), 0, &retErr
+		return formatResult(nil, err)
 	}
 
-	retImg, retErr = mw.GetImagesBlob(), ""
-
-	return unsafe.Pointer(&(retImg[0])), len(retImg), &retErr
+	return formatResult(mw.GetImageBlob(), nil)
 }
 
 //export GoImgSwirl
-func GoImgSwirl(buf *C.char, length C.int, degrees C.double) (unsafe.Pointer, int, *string) {
-	var retImg []byte
-	var retErr string
-
-	data := C.GoBytes(unsafe.Pointer(buf), length)
+func GoImgSwirl(buf *C.char, length C.int, degrees C.double) (*C.char, int, *C.char, int) {
+	raw := cgoutils.ZeroCopySlice(unsafe.Pointer(buf), int(length), int(length), false)
 
 	imagick.Initialize()
 	defer imagick.Terminate()
 	mw := imagick.NewMagickWand()
 
-	err := mw.ReadImageBlob(data)
+	err := mw.ReadImageBlob(raw.Data)
 	if err != nil {
-		retImg, retErr = []byte("m"), err.Error()
-		return unsafe.Pointer(&(retImg[0])), 0, &retErr
+		return formatResult(nil, err)
 	}
 
 	err = mw.SwirlImage(float64(degrees))
 	if err != nil {
-		retImg, retErr = []byte("m"), err.Error()
-		return unsafe.Pointer(&(retImg[0])), 0, &retErr
+		return formatResult(nil, err)
 	}
 
-	retImg, retErr = mw.GetImagesBlob(), ""
-
-	return unsafe.Pointer(&(retImg[0])), len(retImg), &retErr
+	return formatResult(mw.GetImageBlob(), nil)
 }
 
 func main() {}

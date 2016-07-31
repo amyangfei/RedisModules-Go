@@ -2,6 +2,7 @@
 #include "redismodule.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 
 static int UpdateTransformedImage(RedisModuleCtx *ctx, RedisModuleKey *img_key,
@@ -69,12 +70,17 @@ int GMRotateCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     }
 
     struct GoImgRotate_return r = GoImgRotate(buf, key_len, degrees);
-    if ((*r.r2).n != 0) {
-        RedisModule_ReplyWithError(ctx, (*r.r2).p);
+    if (r.r3 != 0) {
+        RedisModule_ReplyWithError(ctx, r.r2);
+        free(r.r0);
+        free(r.r2);
         return REDISMODULE_ERR;
     }
 
-    return UpdateTransformedImage(ctx, key, r.r0, r.r1);
+    int result = UpdateTransformedImage(ctx, key, r.r0, r.r1);
+    free(r.r0);
+    free(r.r2);
+    return result;
 }
 
 int GMSwirlCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -114,12 +120,18 @@ int GMSwirlCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     }
 
     struct GoImgSwirl_return r = GoImgSwirl(buf, key_len, degrees);
-    if ((*r.r2).n != 0) {
-        RedisModule_ReplyWithError(ctx, (*r.r2).p);
+    if (r.r3 != 0) {
+        RedisModule_ReplyWithError(ctx, r.r2);
+        free(r.r0);
+        free(r.r2);
         return REDISMODULE_ERR;
     }
 
-    return UpdateTransformedImage(ctx, key, r.r0, r.r1);
+    int result = UpdateTransformedImage(ctx, key, r.r0, r.r1);
+    free(r.r0);
+    free(r.r2);
+
+    return result;
 }
 
 int GMBlurCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -164,12 +176,17 @@ int GMBlurCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     }
 
     struct GoImgBlur_return r = GoImgBlur(buf, key_len, radius, sigma);
-    if ((*r.r2).n != 0) {
-        RedisModule_ReplyWithError(ctx, (*r.r2).p);
+    if (r.r3 != 0) {
+        RedisModule_ReplyWithError(ctx, r.r2);
+        free(r.r0);
+        free(r.r2);
         return REDISMODULE_ERR;
     }
 
-    return UpdateTransformedImage(ctx, key, r.r0, r.r1);
+    int result = UpdateTransformedImage(ctx, key, r.r0, r.r1);
+    free(r.r0);
+    free(r.r2);
+    return result;
 }
 
 int GMThumbnailCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -214,12 +231,17 @@ int GMThumbnailCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     }
 
     struct GoImgThumbnail_return r = GoImgThumbnail(buf, key_len, width, height);
-    if ((*r.r2).n != 0) {
-        RedisModule_ReplyWithError(ctx, (*r.r2).p);
+    if (r.r3 != 0) {
+        RedisModule_ReplyWithError(ctx, r.r2);
+        free(r.r0);
+        free(r.r2);
         return REDISMODULE_ERR;
     }
 
-    return UpdateTransformedImage(ctx, key, r.r0, r.r1);
+    int result = UpdateTransformedImage(ctx, key, r.r0, r.r1);
+    free(r.r0);
+    free(r.r2);
+    return result;
 }
 
 int GMGetTypeCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -257,11 +279,15 @@ int GMGetTypeCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
     struct GoGetImgType_return r = GoGetImgType(buf, key_len);
 
-    if ((*r.r1).n != 0) {
-        RedisModule_ReplyWithError(ctx, (*r.r1).p);
+    if (r.r3 != 0) {
+        RedisModule_ReplyWithError(ctx, r.r2);
+        free(r.r0);
+        free(r.r2);
         return REDISMODULE_ERR;
     }
-    RedisModule_ReplyWithSimpleString(ctx, (*r.r0).p);
+    RedisModule_ReplyWithSimpleString(ctx, r.r0);
+    free(r.r0);
+    free(r.r2);
 
     return  REDISMODULE_OK;
 }
