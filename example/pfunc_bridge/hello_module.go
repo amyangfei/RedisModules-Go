@@ -1,21 +1,23 @@
 package main
 
-// #include "redismodule.h"
 /*
-typedef RedisModuleString *(*redis_func) (RedisModuleCtx *ctx, char *ptr, size_t len);
+#include "redismodule.h"
 
-inline RedisModuleString *redis_bridge_func(redis_func f, RedisModuleCtx *ctx, char *ptr, size_t len)
-{
-	return f(ctx, ptr, len);
+inline RedisModuleString *RedisModule_CreateString_Wrap(RedisModuleCtx *ctx, char *ptr, size_t len) {
+    void *getapifuncptr = ((void**)ctx)[0];
+    RedisModule_GetApi = (int (*)(const char *, void *)) (unsigned long)getapifuncptr;
+    RedisModule_GetApi("RedisModule_CreateString", (void **)&RedisModule_CreateString);
+
+    RedisModuleString *rms = RedisModule_CreateString(ctx, ptr, len);
+    return rms;
 }
 */
 import "C"
 
 //export GoEcho
 func GoEcho(ctx *C.RedisModuleCtx, s *C.char) *C.RedisModuleString {
-	gostr := (C.GoString(s) + " from golang version 2")
-	f := C.redis_func(C.RedisModule_CreateString)
-	return C.redis_bridge_func(f, ctx, C.CString(gostr), C.size_t(len(gostr)))
+	gostr := (C.GoString(s) + " from golang version bridge")
+	return C.RedisModule_CreateString_Wrap(ctx, C.CString(gostr), C.size_t(len(gostr)))
 }
 
 func main() {}
