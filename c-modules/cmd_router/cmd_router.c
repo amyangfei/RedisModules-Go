@@ -51,18 +51,6 @@ static int router_simple_command(RedisModuleCtx *ctx, RedisModuleString **argv, 
         RedisModule_ReplyWithCallReply(ctx, reply);
         return REDISMODULE_OK;
     }
-    /*
-    switch (argc) {
-        case 2: {
-            reply = RedisModule_Call(ctx, realCmd, "");
-            break;
-        }
-        case 3: {
-            reply = RedisModule_Call(ctx, realCmd, "s", argv[2]);
-            break;
-        }
-    }
-    */
 }
 
 
