@@ -45,12 +45,11 @@ static int router_simple_command(RedisModuleCtx *ctx, RedisModuleString **argv, 
     }
     if (reply == NULL) {
         const char *err = "command error";
-        RedisModule_ReplyWithStringBuffer(ctx, err, strlen(err));
-        return REDISMODULE_ERR;
+        RedisModule_ReplyWithError(ctx, err);
     } else {
         RedisModule_ReplyWithCallReply(ctx, reply);
-        return REDISMODULE_OK;
     }
+    return REDISMODULE_OK;
 }
 
 
